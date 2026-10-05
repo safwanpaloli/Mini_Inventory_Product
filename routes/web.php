@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
         Route::post('/stock/adjust', [\App\Http\Controllers\StockController::class, 'adjust'])->name('stock.adjust');
+        Route::get('/stock-movements', [\App\Http\Controllers\StockMovementController::class, 'index'])->name('stock-movements.index');
         
         Route::get('/exports', [\App\Http\Controllers\ExportController::class, 'index'])->name('exports.index');
         Route::post('/exports/start', [\App\Http\Controllers\ExportController::class, 'start'])->name('exports.start');

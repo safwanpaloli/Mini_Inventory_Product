@@ -72,11 +72,7 @@ class ExportController extends Controller
             abort(404, 'Export not ready');
         }
 
-        $path = storage_path('app/local/' . $log->file_name);
-        if (!file_exists($path)) {
-            // Check if it's in root storage/app instead
-            $path = storage_path('app/' . $log->file_name);
-        }
+        $path = \Illuminate\Support\Facades\Storage::disk('local')->path($log->file_name);
         
         if (!file_exists($path)) {
             abort(404, 'File not found on disk');
