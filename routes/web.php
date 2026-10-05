@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('brands', BrandController::class);
         Route::resource('attributes', AttributeController::class);
         Route::resource('attribute-values', AttributeValueController::class)->only(['store', 'destroy']);
+        Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
+        Route::post('/stock/adjust', [\App\Http\Controllers\StockController::class, 'adjust'])->name('stock.adjust');
         Route::get('/export', function () { return 'Export Area'; });
     });
 
