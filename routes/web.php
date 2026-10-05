@@ -37,7 +37,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('attribute-values', AttributeValueController::class)->only(['store', 'destroy']);
         Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
         Route::post('/stock/adjust', [\App\Http\Controllers\StockController::class, 'adjust'])->name('stock.adjust');
-        Route::get('/export', function () { return 'Export Area'; });
+        
+        Route::get('/exports', [\App\Http\Controllers\ExportController::class, 'index'])->name('exports.index');
+        Route::post('/exports/start', [\App\Http\Controllers\ExportController::class, 'start'])->name('exports.start');
+        Route::get('/exports/status/{id}', [\App\Http\Controllers\ExportController::class, 'status'])->name('exports.status');
+        Route::get('/exports/download/{id}', [\App\Http\Controllers\ExportController::class, 'download'])->name('exports.download');
     });
 
     Route::middleware('role:admin')->group(function () {
