@@ -4,7 +4,18 @@
 <div class="row">
     <div class="col-md-12">
         <h2>Create Product</h2>
-        <form method="POST" action="{{ route('products.store') }}" id="productForm">
+        
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('products.store') }}" id="productForm" enctype="multipart/form-data">
             @csrf
             
             <div class="row">
@@ -33,6 +44,15 @@
                             <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label>Thumbnail</label>
+                    <input type="file" name="thumbnail" class="form-control @error('thumbnail') is-invalid @enderror" accept="image/*">
+                    @error('thumbnail')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                    @enderror
                 </div>
             </div>
 

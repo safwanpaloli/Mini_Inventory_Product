@@ -19,16 +19,20 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
                 </li>
-                @if(in_array(auth()->user()->role, ['admin', 'manager']))
+                @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('products.index') }}">Products</a>
                     </li>
+                @endif
+                @if(in_array(auth()->user()->role, ['admin', 'manager']))
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ route('stock.index') }}">Manage Stock</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-info" href="{{ route('exports.index') }}">Exports</a>
                     </li>
+                @endif
+                @if(auth()->user()->role === 'admin')
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('categories.index') }}">Categories</a>
                     </li>
@@ -38,8 +42,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('attributes.index') }}">Attributes</a>
                     </li>
-                @endif
-                @if(auth()->user()->role === 'admin')
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('users.index') }}">Users</a>
                     </li>

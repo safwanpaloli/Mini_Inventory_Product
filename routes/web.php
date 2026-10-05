@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::middleware('guest')->group(function () {
@@ -30,11 +30,8 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::middleware('role:admin,manager')->group(function () {
-        Route::resource('products', ProductController::class);
-        Route::resource('categories', CategoryController::class);
-        Route::resource('brands', BrandController::class);
-        Route::resource('attributes', AttributeController::class);
-        Route::resource('attribute-values', AttributeValueController::class)->only(['store', 'destroy']);
+        Route::resource('products', ProductController::class)->except(['index', 'show']);
+
         Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
         Route::post('/stock/adjust', [\App\Http\Controllers\StockController::class, 'adjust'])->name('stock.adjust');
         
@@ -44,7 +41,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/exports/download/{id}', [\App\Http\Controllers\ExportController::class, 'download'])->name('exports.download');
     });
 
+    Route::middleware('role:admin,manager,staff')->group(function () {
+        Route::resource('products', ProductController::class)->only(['index', 'show']);
+    });
+
     Route::middleware('role:admin')->group(function () {
+        Route::resource('categories', CategoryController::class);
+        Route::resource('brands', BrandController::class);
+        Route::resource('attributes', AttributeController::class);
+        Route::resource('attribute-values', AttributeValueController::class)->only(['store', 'destroy']);
         Route::resource('users', UserController::class);
     });
 });
