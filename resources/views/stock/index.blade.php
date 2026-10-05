@@ -53,6 +53,10 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <div class="mt-4 d-flex justify-content-center">
+                    {{ $variants->links() }}
+                </div>
             </div>
         </div>
     </div>

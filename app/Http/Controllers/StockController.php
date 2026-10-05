@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
-use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Services\ProductService;
 
@@ -18,7 +17,7 @@ class StockController extends Controller
     }
     public function index()
     {
-        $variants = ProductVariant::with('product')->get();
+        $variants = ProductVariant::with('product')->paginate(15);
         return view('stock.index', compact('variants'));
     }
 

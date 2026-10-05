@@ -1,58 +1,72 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Mini Inventory & Product Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a Laravel-based inventory and product management application. It supports dynamic product variants, stock ledger tracking, bulk data export, and role-based access control.
 
-## About Laravel
+## Prerequisites
+- PHP >= 8.2
+- Composer
+- Node.js & NPM
+- MySQL or SQLite (configured in `.env`)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Setup Instructions
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. **Clone & Install Dependencies**
+   ```bash
+   composer install
+   npm install
+   npm run build
+   ```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. **Environment Configuration**
+   Copy `.env.example` to `.env` and configure your database settings.
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Learning Laravel
+3. **Storage Link**
+   Because products support thumbnail uploads, you must link the storage folder:
+   ```bash
+   php artisan storage:link
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+4. **Database Migration & Seeding**
+   Run the migrations and seed the database with the default roles and users.
+   ```bash
+   php artisan migrate --seed
+   ```
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+5. **Big Data Testing (Optional)**
+   If you wish to test the system with a massive dataset (50,000+ variants), run the big data seeder:
+   ```bash
+   php artisan db:seed --class=BigDataSeeder
+   ```
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+6. **Queue Worker**
+   Bulk CSV exporting is processed in the background via jobs. You must run a queue worker to process export requests:
+   ```bash
+   php artisan queue:work
+   ```
 
-## Agentic Development
+7. **Run the Application**
+   ```bash
+   php artisan serve
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Test Credentials
 
-```bash
-composer require laravel/boost --dev
+The `DatabaseSeeder` automatically generates three default users for testing the Role-Based Access Control (RBAC). The password for all accounts is **`password`**.
 
-php artisan boost:install
-```
+| Role | Email | Privileges |
+| :--- | :--- | :--- |
+| **Admin** | `admin@example.com` | Full access. Can manage users, master data (brands, categories, attributes), products, and stock. |
+| **Manager** | `manager@example.com` | Can manage products, edit variants, and adjust stock. Cannot manage master data. |
+| **Staff** | `staff@example.com` | Read-only access to products and variants. Cannot add/edit products or export data. |
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Assumptions & Design Decisions
+- **Roles & Authentication**: A custom role system (`role` column on the `users` table) is used rather than Spatie Permissions for simplicity and speed. Middleware enforces role restrictions across routes.
+- **Dynamic Variants**: Product variants are generated dynamically via JavaScript based on a Cartesian product algorithm when combining multiple attributes (e.g., Color + Size).
+- **Stock Ledger**: Stock cannot be directly modified. All modifications (In/Out) are recorded in a `stock_movements` ledger table, and the variant's `stock` column acts as a cached total.
+- **Concurrency**: `lockForUpdate()` is utilized during stock adjustments to prevent race conditions during concurrent modifications.
+- **Exports**: Due to potential memory limits with big data, the bulk export functionality utilizes Laravel Jobs, chunking, and streams to a CSV file stored in the public disk. Progress is tracked via an `export_logs` table.
+- **Service Layer**: Complex business logic (saving product combinations, re-hydrating variants during updates, stock ledger logic) is centralized in `App\Services\ProductService.php` to keep controllers thin.
