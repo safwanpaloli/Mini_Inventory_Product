@@ -22,6 +22,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function __construct($exportLogId, $filters = [])
     {
+        \Illuminate\Support\Facades\DB::disableQueryLog();
         $this->exportLogId = $exportLogId;
         $this->filters = $filters;
         $this->log = ExportLog::find($exportLogId);
@@ -64,8 +65,8 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
     {
         $this->processed++;
         
-        // Update database progress every 1000 rows to avoid DB bottleneck
-        if ($this->processed % 1000 === 0 && $this->log) {
+        // Update database progress every 250 rows to avoid DB bottleneck
+        if ($this->processed % 250 === 0 && $this->log) {
             $total = $this->log->total_rows ?: 1;
             $progress = min(99, round(($this->processed / $total) * 100));
             $this->log->update([
@@ -91,6 +92,6 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function chunkSize(): int
     {
-        return 1000;
+        return 250;
     }
 }

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Inventory</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @stack('styles')
 </head>
 <body class="bg-light">
 
@@ -27,6 +29,9 @@
                 @if(in_array(auth()->user()->role, ['admin', 'manager']))
                     <li class="nav-item">
                         <a class="nav-link text-warning" href="{{ route('stock.index') }}">Manage Stock</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-success" href="{{ route('stock-movements.index') }}">Stock Ledger</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-info" href="{{ route('exports.index') }}">Exports</a>
@@ -123,5 +128,7 @@
         });
     });
 </script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+@stack('scripts')
 </body>
 </html>

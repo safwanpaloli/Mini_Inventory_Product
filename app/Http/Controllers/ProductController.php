@@ -19,10 +19,51 @@ class ProductController extends Controller
     {
         $this->productService = $productService;
     }
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with(['category', 'variants'])->latest()->paginate(15);
-        return view('products.index', compact('products'));
+        if ($request->ajax()) {
+            $query = Product::with(['category', 'brand', 'variants'])->select('products.*');
+            
+            // Custom filtering
+            if ($request->has('category_id') && $request->category_id != '') {
+                $query->where('category_id', $request->category_id);
+            }
+            if ($request->has('brand_id') && $request->brand_id != '') {
+                $query->where('brand_id', $request->brand_id);
+            }
+            if ($request->has('status') && $request->status != '') {
+                $query->where('status', $request->status);
+            }
+
+            return datatables()->eloquent($query)
+                ->addColumn('category_name', function ($product) {
+                    return $product->category ? $product->category->name : 'N/A';
+                })
+                ->addColumn('brand_name', function ($product) {
+                    return $product->brand ? $product->brand->name : 'N/A';
+                })
+                ->addColumn('variants_count', function ($product) {
+                    return $product->variants->count();
+                })
+                ->addColumn('action', function ($product) {
+                    return view('products.partials.actions', compact('product'))->render();
+                })
+                ->filterColumn('category_name', function ($query, $keyword) {
+                    $query->whereHas('category', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->orderColumn('category_name', function ($query, $order) {
+                    $query->join('categories', 'products.category_id', '=', 'categories.id')
+                          ->orderBy('categories.name', $order);
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        $categories = Category::all();
+        $brands = Brand::all();
+        return view('products.index', compact('categories', 'brands'));
     }
 
     public function create()
@@ -50,6 +91,9 @@ class ProductController extends Controller
 
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
+            if (!$request->file('thumbnail')->isValid()) {
+                return back()->withInput()->with('error', 'The thumbnail failed to upload. PHP temporary directory error.');
+            }
             $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
         }
 
@@ -78,6 +122,9 @@ class ProductController extends Controller
 
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
+            if (!$request->file('thumbnail')->isValid()) {
+                return back()->withInput()->with('error', 'The thumbnail failed to upload. PHP temporary directory error.');
+            }
             $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
         }
 
