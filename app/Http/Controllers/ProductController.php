@@ -9,10 +9,16 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Attribute;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
+use App\Services\ProductService;
 
 class ProductController extends Controller
 {
+    protected ProductService $productService;
+
+    public function __construct(ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
     public function index()
     {
         $products = Product::with(['category', 'variants'])->latest()->paginate(15);
@@ -47,32 +53,11 @@ class ProductController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
         }
 
-        DB::transaction(function () use ($request, $thumbnailPath) {
-            $product = Product::create([
-                'name' => $request->name,
-                'slug' => Str::slug($request->name) . '-' . uniqid(),
-                'base_price' => $request->base_price,
-                'category_id' => $request->category_id,
-                'brand_id' => $request->brand_id,
-                'status' => 'active',
-                'thumbnail' => $thumbnailPath,
-            ]);
-
-            foreach ($request->variants as $vData) {
-                $variant = $product->variants()->create([
-                    'sku' => $vData['sku'],
-                    'cost_price' => $vData['cost_price'] ?: 0,
-                    'selling_price' => $vData['selling_price'],
-                    'stock' => $vData['stock'],
-                    'active' => $vData['active'],
-                ]);
-
-                if (isset($vData['values'])) {
-                    $valIds = explode(',', $vData['values']);
-                    $variant->attributeValues()->attach($valIds);
-                }
-            }
-        });
+        $this->productService->createProduct(
+            $request->only(['name', 'base_price', 'category_id', 'brand_id']),
+            $request->variants ?? [],
+            $thumbnailPath
+        );
 
         return redirect()->route('products.index')->with('success', 'Product and variants saved successfully!');
     }
@@ -91,37 +76,17 @@ class ProductController extends Controller
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = [
-            'name' => $request->name,
-            'base_price' => $request->base_price,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id,
-        ];
-
+        $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
-            $data['thumbnail'] = $request->file('thumbnail')->store('thumbnails', 'public');
+            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
         }
 
-        // Update base product details
-        $product->update($data);
-
-        // Update existing variants
-        if ($request->has('variants') && is_array($request->variants)) {
-            foreach ($request->variants as $vData) {
-                if (isset($vData['id'])) {
-                    $variant = $product->variants()->find($vData['id']);
-                    if ($variant) {
-                        $variant->update([
-                            'sku' => $vData['sku'],
-                            'cost_price' => $vData['cost_price'] ?: 0,
-                            'selling_price' => $vData['selling_price'],
-                            'stock' => $vData['stock'],
-                            'active' => $vData['active'],
-                        ]);
-                    }
-                }
-            }
-        }
+        $this->productService->updateProduct(
+            $product,
+            $request->only(['name', 'base_price', 'category_id', 'brand_id']),
+            $request->variants ?? [],
+            $thumbnailPath
+        );
         
         return redirect()->route('products.index')->with('success', 'Product and variants updated successfully!');
     }
