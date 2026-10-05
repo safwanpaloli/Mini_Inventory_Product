@@ -15,6 +15,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\AttributeValueController;
+
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -23,11 +30,15 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::middleware('role:admin,manager')->group(function () {
-        Route::get('/products', function () { return 'Products Area'; });
+        Route::resource('products', ProductController::class);
+        Route::resource('categories', CategoryController::class);
+        Route::resource('brands', BrandController::class);
+        Route::resource('attributes', AttributeController::class);
+        Route::resource('attribute-values', AttributeValueController::class)->only(['store', 'destroy']);
         Route::get('/export', function () { return 'Export Area'; });
     });
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/users', function () { return 'User Management'; });
+        Route::resource('users', UserController::class);
     });
 });
