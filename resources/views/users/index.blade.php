@@ -3,8 +3,10 @@
 @section('content')
 <div class="row">
     <div class="col-md-12">
-        <h2>Users</h2>
-        <a href="#" class="btn btn-primary mb-3">Add User</a>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Users</h2>
+            <a href="{{ route('users.create') }}" class="btn btn-primary">Add User</a>
+        </div>
         <table class="table table-bordered bg-white shadow-sm">
             <thead>
                 <tr>

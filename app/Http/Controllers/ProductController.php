@@ -15,7 +15,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'variants'])->get();
+        $products = Product::with(['category', 'variants'])->latest()->paginate(15);
         return view('products.index', compact('products'));
     }
 
@@ -27,15 +27,27 @@ class ProductController extends Controller
         return view('products.create', compact('categories', 'brands', 'attributes'));
     }
 
+    public function show(Product $product)
+    {
+        $product->load(['category', 'brand', 'variants.attributeValues']);
+        return view('products.show', compact('product'));
+    }
+
     public function store(\App\Http\Requests\StoreProductRequest $request)
     {
         // Add additional manual validation for variants array inside since the request validates the structure
         $request->validate([
             'variants.*.sku' => 'required|string|distinct|unique:product_variants,sku',
             'variants.*.selling_price' => 'required|numeric|min:0',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $thumbnailPath = null;
+        if ($request->hasFile('thumbnail')) {
+            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
+        }
+
+        DB::transaction(function () use ($request, $thumbnailPath) {
             $product = Product::create([
                 'name' => $request->name,
                 'slug' => Str::slug($request->name) . '-' . uniqid(),
@@ -43,6 +55,7 @@ class ProductController extends Controller
                 'category_id' => $request->category_id,
                 'brand_id' => $request->brand_id,
                 'status' => 'active',
+                'thumbnail' => $thumbnailPath,
             ]);
 
             foreach ($request->variants as $vData) {
@@ -66,6 +79,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
+        $product->load('variants.attributeValues');
         $categories = Category::all();
         $brands = Brand::all();
         return view('products.edit', compact('product', 'categories', 'brands'));
@@ -73,15 +87,43 @@ class ProductController extends Controller
 
     public function update(\App\Http\Requests\UpdateProductRequest $request, Product $product)
     {
-        // Currently only updating base product details for simplicity
-        $product->update([
+        $request->validate([
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $data = [
             'name' => $request->name,
             'base_price' => $request->base_price,
             'category_id' => $request->category_id,
             'brand_id' => $request->brand_id,
-        ]);
+        ];
+
+        if ($request->hasFile('thumbnail')) {
+            $data['thumbnail'] = $request->file('thumbnail')->store('thumbnails', 'public');
+        }
+
+        // Update base product details
+        $product->update($data);
+
+        // Update existing variants
+        if ($request->has('variants') && is_array($request->variants)) {
+            foreach ($request->variants as $vData) {
+                if (isset($vData['id'])) {
+                    $variant = $product->variants()->find($vData['id']);
+                    if ($variant) {
+                        $variant->update([
+                            'sku' => $vData['sku'],
+                            'cost_price' => $vData['cost_price'] ?: 0,
+                            'selling_price' => $vData['selling_price'],
+                            'stock' => $vData['stock'],
+                            'active' => $vData['active'],
+                        ]);
+                    }
+                }
+            }
+        }
         
-        return redirect()->route('products.index')->with('success', 'Product updated successfully! (Variant updating requires complex UI rehydration)');
+        return redirect()->route('products.index')->with('success', 'Product and variants updated successfully!');
     }
 
     public function destroy(Product $product)
