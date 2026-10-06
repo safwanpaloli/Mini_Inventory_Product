@@ -5,7 +5,6 @@ This is a Laravel-based inventory and product management application. It support
 ## Prerequisites
 - PHP >= 8.2
 - Composer
-- Node.js & NPM
 - MySQL or SQLite (configured in `.env`)
 
 ## Setup Instructions
@@ -13,8 +12,6 @@ This is a Laravel-based inventory and product management application. It support
 1. **Clone & Install Dependencies**
    ```bash
    composer install
-   npm install
-   npm run build
    ```
 
 2. **Environment Configuration**
@@ -52,6 +49,13 @@ This is a Laravel-based inventory and product management application. It support
    ```bash
    php artisan serve
    ```
+
+## Testing
+
+This application includes automated tests to ensure reliability. To run the test suite, simply run:
+```bash
+php artisan test
+```
 
 ## Test Credentials
 
